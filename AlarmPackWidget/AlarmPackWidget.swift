@@ -70,6 +70,7 @@ struct AlarmPackWidgetEntryView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .widgetURL(URL(string: "alarmpack://pack")!)
         .containerBackground(for: .widget) {
             Color(.systemBackground)
         }
@@ -103,6 +104,7 @@ struct AlarmPackWidgetEntryView: View {
             }
         }
         .padding()
+        .widgetURL(URL(string: "alarmpack://pack")!)
         .containerBackground(for: .widget) {
             Color(.systemBackground)
         }

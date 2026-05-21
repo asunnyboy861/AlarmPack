@@ -9,6 +9,10 @@ struct PackDetailView: View {
     @State private var showEditAlarm = false
     @State private var storeKit = StoreKitService.shared
 
+    private var currentPack: Pack {
+        viewModel?.pack ?? pack
+    }
+
     var body: some View {
         Group {
             if let vm = viewModel {
@@ -17,7 +21,7 @@ struct PackDetailView: View {
                 ProgressView()
             }
         }
-        .navigationTitle(pack.name)
+        .navigationTitle(currentPack.name)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -44,8 +48,8 @@ struct PackDetailView: View {
             get: { viewModel?.showAddAlarm ?? false },
             set: { viewModel?.showAddAlarm = $0 }
         )) {
-            AddAlarmView(pack: pack, modelContext: modelContext) {
-                viewModel?.pack = pack
+            AddAlarmView(pack: currentPack, modelContext: modelContext) {
+                viewModel?.refreshPack()
                 viewModel?.showAddAlarm = false
             }
         }
@@ -58,7 +62,7 @@ struct PackDetailView: View {
         .sheet(isPresented: $showEditAlarm) {
             if let alarm = editingAlarm {
                 EditAlarmView(alarm: alarm, modelContext: modelContext) {
-                    viewModel?.pack = pack
+                    viewModel?.refreshPack()
                     editingAlarm = nil
                 }
             }

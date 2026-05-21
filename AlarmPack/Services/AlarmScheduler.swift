@@ -32,6 +32,7 @@ actor AlarmScheduler {
     }
 
     func scheduleAllAlarms(in pack: Pack) async {
+        await removeAllAlarms(in: pack)
         for alarm in pack.alarms where alarm.isEnabled && !alarm.isSkippedToday {
             await scheduleAlarm(alarm, in: pack)
         }
@@ -82,10 +83,17 @@ actor AlarmScheduler {
                 }
             }
         } else {
-            var dateComponents = DateComponents()
+            let now = Date()
+            var dateComponents = Calendar.current.dateComponents([.year, .month, .day], from: now)
             dateComponents.hour = alarm.hour
             dateComponents.minute = alarm.minute
-            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+            dateComponents.second = 0
+            var triggerDate = Calendar.current.date(from: dateComponents) ?? now
+            if triggerDate <= now {
+                triggerDate = Calendar.current.date(byAdding: .day, value: 1, to: triggerDate) ?? triggerDate
+            }
+            let triggerDateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDateComponents, repeats: false)
             let request = UNNotificationRequest(identifier: alarm.id.uuidString, content: content, trigger: trigger)
             do {
                 try await center.add(request)

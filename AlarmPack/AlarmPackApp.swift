@@ -27,6 +27,9 @@ struct AlarmPackApp: App {
             .onAppear {
                 checkOnboardingStatus()
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                rescheduleActiveAlarms()
+            }
         }
         .modelContainer(sharedModelContainer)
     }
@@ -39,5 +42,17 @@ struct AlarmPackApp: App {
         }
         let skipManager = SkipManager(modelContext: context)
         skipManager.cleanupExpiredSkips()
+    }
+
+    private func rescheduleActiveAlarms() {
+        let context = sharedModelContainer.mainContext
+        let skipManager = SkipManager(modelContext: context)
+        skipManager.cleanupExpiredSkips()
+
+        let descriptor = FetchDescriptor<Pack>(predicate: #Predicate { $0.isActive })
+        guard let activePack = try? context.fetch(descriptor).first else { return }
+        Task {
+            await AlarmScheduler.shared.scheduleAllAlarms(in: activePack)
+        }
     }
 }

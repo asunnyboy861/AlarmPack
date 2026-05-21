@@ -73,10 +73,10 @@ struct AddPackView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let _ = packManager.createPack(name: name.isEmpty ? "My Pack" : name, iconName: selectedIcon, colorHex: selectedColor, scheduleType: scheduleType)
+                        let _ = packManager.createPack(name: name, iconName: selectedIcon, colorHex: selectedColor, scheduleType: scheduleType)
                         onDismiss()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }

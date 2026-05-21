@@ -12,9 +12,13 @@ final class SkipManager {
     }
 
     func skipAlarm(_ alarm: AlarmItem) async {
+        guard !alarm.isSkippedToday else { return }
         alarm.isSkippedToday = true
-        await alarmScheduler.removeAlarm(alarm)
-        let record = SkipRecord(alarmId: alarm.id, skipDate: Date().tomorrow)
+        if alarm.pack?.isActive == true {
+            await alarmScheduler.removeAlarm(alarm)
+        }
+        let tomorrow = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
+        let record = SkipRecord(alarmId: alarm.id, skipDate: tomorrow)
         modelContext.insert(record)
         try? modelContext.save()
     }
@@ -42,14 +46,20 @@ final class SkipManager {
 
     func cleanupExpiredSkips() {
         let now = Date()
+        let startOfToday = Calendar.current.startOfDay(for: now)
         let descriptor = FetchDescriptor<SkipRecord>()
         if let records = try? modelContext.fetch(descriptor) {
-            let expired = records.filter { $0.skipDate < now }
+            let expired = records.filter { $0.skipDate <= startOfToday }
             let alarmDescriptor = FetchDescriptor<AlarmItem>()
             let allAlarms = (try? modelContext.fetch(alarmDescriptor)) ?? []
             for record in expired {
                 if let alarm = allAlarms.first(where: { $0.id == record.alarmId }) {
                     alarm.isSkippedToday = false
+                    if alarm.isEnabled, alarm.pack?.isActive == true {
+                        Task {
+                            await AlarmScheduler.shared.scheduleAlarm(alarm, in: alarm.pack!)
+                        }
+                    }
                 }
                 modelContext.delete(record)
             }

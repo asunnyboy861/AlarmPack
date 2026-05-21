@@ -24,6 +24,9 @@ final class PackManager {
             }
         }
 
+        let skipManager = SkipManager(modelContext: modelContext)
+        skipManager.cleanupExpiredSkips()
+
         pack.isActive = true
         await alarmScheduler.scheduleAllAlarms(in: pack)
 

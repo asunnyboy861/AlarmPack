@@ -41,12 +41,14 @@ struct PackCardView: View {
 
             Spacer()
 
-            Toggle("", isOn: Binding(
-                get: { pack.isActive },
-                set: { _ in onToggle() }
-            ))
-            .labelsHidden()
-            .tint(Color(hex: pack.colorHex))
+            Button {
+                onToggle()
+            } label: {
+                Image(systemName: pack.isActive ? "power.circle.fill" : "power.circle")
+                    .font(.title2)
+                    .foregroundStyle(pack.isActive ? Color(hex: pack.colorHex) : .secondary)
+            }
+            .buttonStyle(.plain)
         }
         .padding(14)
         .background(

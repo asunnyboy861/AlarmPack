@@ -38,14 +38,16 @@ final class AlarmViewModel {
 
     func saveAlarm() async -> Bool {
         if let existing = existingAlarm {
+            if pack.isActive {
+                await AlarmScheduler.shared.removeAlarm(existing)
+            }
             existing.hour = hour
             existing.minute = minute
             existing.label = label
             existing.repeatDaysArray = Array(repeatDays).sorted()
             existing.snoozeMinutes = snoozeMinutes
             existing.soundName = soundName
-            if pack.isActive {
-                await AlarmScheduler.shared.removeAlarm(existing)
+            if pack.isActive && existing.isEnabled && !existing.isSkippedToday {
                 await AlarmScheduler.shared.scheduleAlarm(existing, in: pack)
             }
         } else {

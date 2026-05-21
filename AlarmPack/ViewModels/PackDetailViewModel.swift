@@ -24,6 +24,10 @@ final class PackDetailViewModel {
         pack.alarms.sorted { ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute) }
     }
 
+    func refreshPack() {
+        try? modelContext.save()
+    }
+
     func toggleAlarm(_ alarm: AlarmItem) async {
         alarm.isEnabled.toggle()
         if alarm.isEnabled {
