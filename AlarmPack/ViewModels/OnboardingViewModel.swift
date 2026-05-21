@@ -29,7 +29,7 @@ final class OnboardingViewModel {
         }
     }
 
-    func completeOnboarding() -> Bool {
+    func completeOnboarding() async -> Bool {
         let packManager = PackManager(modelContext: modelContext)
         var firstPack: Pack?
         for template in templates where selectedTemplates.contains(template.name) {
@@ -45,7 +45,7 @@ final class OnboardingViewModel {
         }
 
         if let first = firstPack {
-            Task { await packManager.togglePack(first) }
+            await packManager.togglePack(first)
         }
 
         let descriptor = FetchDescriptor<AppSettings>()

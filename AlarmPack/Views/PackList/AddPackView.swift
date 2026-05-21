@@ -76,7 +76,7 @@ struct AddPackView: View {
                         let _ = packManager.createPack(name: name.isEmpty ? "My Pack" : name, iconName: selectedIcon, colorHex: selectedColor, scheduleType: scheduleType)
                         onDismiss()
                     }
-                    .disabled(name.isEmpty && selectedIcon.isEmpty)
+                    .disabled(name.isEmpty)
                 }
             }
         }

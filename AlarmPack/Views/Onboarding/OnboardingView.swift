@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 #if canImport(AlarmKit)
 import AlarmKit
 #endif
@@ -43,7 +44,35 @@ struct OnboardingView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 24)
+                } else {
+                    Button {
+                        requestNotificationPermission()
+                    } label: {
+                        Label("Enable Notifications", systemImage: "bell.badge")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.orange)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                 }
+                #else
+                Button {
+                    requestNotificationPermission()
+                } label: {
+                    Label("Enable Notifications", systemImage: "bell.badge")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(.orange)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 24)
                 #endif
 
                 Text("Quick Start Templates")
@@ -66,9 +95,11 @@ struct OnboardingView: View {
                     if vm.selectedTemplates.isEmpty {
                         vm.toggleTemplate("Work")
                     }
-                    let success = vm.completeOnboarding()
-                    if success {
-                        hasCompletedOnboarding = true
+                    Task {
+                        let success = await vm.completeOnboarding()
+                        if success {
+                            hasCompletedOnboarding = true
+                        }
                     }
                 } label: {
                     Text(vm.selectedTemplates.isEmpty ? "Start with Work Pack" : "Get Started")
@@ -127,11 +158,17 @@ struct OnboardingView: View {
         Task {
             do {
                 let alarmManager = AlarmManager.shared
-                try await alarmManager.requestAuthorization()
+                _ = try await alarmManager.requestAuthorization()
             } catch {
                 print("AlarmKit permission error: \(error)")
             }
         }
     }
     #endif
+
+    private func requestNotificationPermission() {
+        Task {
+            _ = await AlarmScheduler.shared.requestNotificationPermission()
+        }
+    }
 }

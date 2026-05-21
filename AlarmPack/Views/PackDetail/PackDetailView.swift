@@ -1,9 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct PackDetailView: View {
     let pack: Pack
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: PackDetailViewModel?
+    @State private var editingAlarm: AlarmItem?
+    @State private var showEditAlarm = false
+    @State private var storeKit = StoreKitService.shared
 
     var body: some View {
         Group {
@@ -40,11 +44,9 @@ struct PackDetailView: View {
             get: { viewModel?.showAddAlarm ?? false },
             set: { viewModel?.showAddAlarm = $0 }
         )) {
-            if let vm = viewModel {
-                AddAlarmView(pack: pack, modelContext: modelContext) {
-                    viewModel?.pack = pack
-                    viewModel?.showAddAlarm = false
-                }
+            AddAlarmView(pack: pack, modelContext: modelContext) {
+                viewModel?.pack = pack
+                viewModel?.showAddAlarm = false
             }
         }
         .sheet(isPresented: Binding(
@@ -52,6 +54,14 @@ struct PackDetailView: View {
             set: { viewModel?.showPaywall = $0 }
         )) {
             PaywallView()
+        }
+        .sheet(isPresented: $showEditAlarm) {
+            if let alarm = editingAlarm {
+                EditAlarmView(alarm: alarm, modelContext: modelContext) {
+                    viewModel?.pack = pack
+                    editingAlarm = nil
+                }
+            }
         }
         .confirmationDialog("Skip All Alarms Tomorrow?", isPresented: Binding(
             get: { viewModel?.showSkipAllConfirmation ?? false },
@@ -82,14 +92,15 @@ struct PackDetailView: View {
                 .listRowBackground(Color.clear)
             } else {
                 ForEach(vm.alarms, id: \.id) { alarm in
-                    AlarmRowView(alarm: alarm, isPro: StoreKitService.shared.isPro) {
+                    AlarmRowView(alarm: alarm, isPro: storeKit.isPro) {
                         Task { await vm.toggleAlarm(alarm) }
                     } onSkip: {
                         Task { await vm.skipAlarm(alarm) }
                     } onUnskip: {
                         Task { await vm.unskipAlarm(alarm) }
                     } onEdit: {
-                        // Navigation to edit handled by row tap
+                        editingAlarm = alarm
+                        showEditAlarm = true
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {

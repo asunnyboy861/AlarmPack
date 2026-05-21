@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 #if canImport(AlarmKit)
 import AlarmKit
 import ActivityKit
@@ -14,16 +15,20 @@ actor AlarmScheduler {
         #if canImport(AlarmKit)
         if #available(iOS 26, *) {
             await scheduleWithAlarmKit(alarm, in: pack)
+            return
         }
         #endif
+        await scheduleWithLocalNotification(alarm, in: pack)
     }
 
     func removeAlarm(_ alarm: AlarmItem) async {
         #if canImport(AlarmKit)
         if #available(iOS 26, *) {
             await removeFromAlarmKit(alarm)
+            return
         }
         #endif
+        removeFromLocalNotification(alarm)
     }
 
     func scheduleAllAlarms(in pack: Pack) async {
@@ -35,6 +40,69 @@ actor AlarmScheduler {
     func removeAllAlarms(in pack: Pack) async {
         for alarm in pack.alarms {
             await removeAlarm(alarm)
+        }
+    }
+
+    func requestNotificationPermission() async -> Bool {
+        do {
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+            return granted
+        } catch {
+            print("Notification permission error: \(error)")
+            return false
+        }
+    }
+
+    private func scheduleWithLocalNotification(_ alarm: AlarmItem, in pack: Pack) async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = alarm.label.isEmpty ? pack.name : alarm.label
+        content.body = "Alarm - \(alarm.timeString)"
+        content.sound = .default
+        content.categoryIdentifier = "ALARM_CATEGORY"
+        content.userInfo = ["alarmId": alarm.id.uuidString]
+
+        if alarm.isRepeating {
+            let days = alarm.repeatDaysArray.sorted()
+            for day in days {
+                let weekday = day + 1
+                var dateComponents = DateComponents()
+                dateComponents.hour = alarm.hour
+                dateComponents.minute = alarm.minute
+                dateComponents.weekday = weekday
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+                let request = UNNotificationRequest(identifier: "\(alarm.id.uuidString)-\(day)", content: content, trigger: trigger)
+                do {
+                    try await center.add(request)
+                } catch {
+                    print("Local notification schedule error: \(error)")
+                }
+            }
+        } else {
+            var dateComponents = DateComponents()
+            dateComponents.hour = alarm.hour
+            dateComponents.minute = alarm.minute
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+            let request = UNNotificationRequest(identifier: alarm.id.uuidString, content: content, trigger: trigger)
+            do {
+                try await center.add(request)
+            } catch {
+                print("Local notification schedule error: \(error)")
+            }
+        }
+    }
+
+    private func removeFromLocalNotification(_ alarm: AlarmItem) {
+        let center = UNUserNotificationCenter.current()
+        if alarm.isRepeating {
+            let days = alarm.repeatDaysArray
+            let ids = days.map { "\(alarm.id.uuidString)-\($0)" }
+            center.removePendingNotificationRequests(withIdentifiers: ids)
+        } else {
+            center.removePendingNotificationRequests(withIdentifiers: [alarm.id.uuidString])
         }
     }
 

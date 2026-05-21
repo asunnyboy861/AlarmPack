@@ -37,5 +37,7 @@ struct AlarmPackApp: App {
         if let settings = try? context.fetch(descriptor).first {
             hasCompletedOnboarding = settings.hasCompletedOnboarding
         }
+        let skipManager = SkipManager(modelContext: context)
+        skipManager.cleanupExpiredSkips()
     }
 }

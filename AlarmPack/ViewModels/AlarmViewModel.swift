@@ -29,6 +29,13 @@ final class AlarmViewModel {
         }
     }
 
+    func deleteAlarm() async {
+        guard let existing = existingAlarm else { return }
+        await AlarmScheduler.shared.removeAlarm(existing)
+        modelContext.delete(existing)
+        try? modelContext.save()
+    }
+
     func saveAlarm() async -> Bool {
         if let existing = existingAlarm {
             existing.hour = hour

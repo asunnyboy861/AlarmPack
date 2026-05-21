@@ -43,7 +43,7 @@ final class AlarmItem {
     }
 
     var timeString: String {
-        let h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour)
+        let h = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
         let period = hour >= 12 ? "PM" : "AM"
         return String(format: "%d:%02d %@", h, minute, period)
     }

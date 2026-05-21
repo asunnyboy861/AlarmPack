@@ -37,7 +37,9 @@ final class Pack {
     var firstAlarmTime: String? {
         let enabled = alarms.filter { $0.isEnabled }.sorted { ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute) }
         guard let first = enabled.first else { return nil }
-        return String(format: "%d:%02d %@", first.hour > 11 ? first.hour - (first.hour > 12 ? 12 : 0) : first.hour, first.minute, first.hour >= 12 ? "PM" : "AM")
+        let h = first.hour == 0 ? 12 : (first.hour > 12 ? first.hour - 12 : first.hour)
+        let period = first.hour >= 12 ? "PM" : "AM"
+        return String(format: "%d:%02d %@", h, first.minute, period)
     }
 
     var enabledAlarmCount: Int {

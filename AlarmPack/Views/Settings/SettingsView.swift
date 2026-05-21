@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: SettingsViewModel?
+    @State private var storeKit = StoreKitService.shared
 
     private let githubUser = "asunnyboy861"
     private let appName = "AlarmPack"
@@ -32,7 +34,7 @@ struct SettingsView: View {
 
     private func proSection(_ vm: SettingsViewModel) -> some View {
         Section {
-            if vm.isPro {
+            if storeKit.isPro {
                 HStack {
                     Image(systemName: "crown.fill")
                         .foregroundStyle(.orange)
