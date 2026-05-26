@@ -9,6 +9,7 @@ final class StoreKitService {
     var isPro: Bool = false
     var product: Product?
     var isLoading = false
+    var purchaseError: String?
 
     private var transactionListener: Task<Void, Never>?
 
@@ -27,7 +28,11 @@ final class StoreKitService {
     }
 
     func purchasePro() async -> Bool {
-        guard let product = product else { return false }
+        purchaseError = nil
+        guard let product = product else {
+            purchaseError = "Product not available. Please try again later."
+            return false
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -39,12 +44,15 @@ final class StoreKitService {
                     await transaction.finish()
                     return true
                 }
-            case .userCancelled, .pending:
+            case .userCancelled:
                 break
+            case .pending:
+                purchaseError = "Purchase is pending approval."
             @unknown default:
                 break
             }
         } catch {
+            purchaseError = "Purchase failed. Please try again."
             print("StoreKit purchase error: \(error)")
         }
         return false
@@ -72,11 +80,14 @@ final class StoreKitService {
     }
 
     private func listenForTransactions() -> Task<Void, Never> {
-        Task.detached { [weak self] in
+        Task.detached {
             for await result in Transaction.updates {
                 if case .verified(let transaction) = result {
                     if transaction.productID == "com.zzoutuo.AlarmPack.pro" {
-                        await MainActor.run { self?.isPro = transaction.revocationDate == nil }
+                        let isValid = transaction.revocationDate == nil
+                        await MainActor.run {
+                            StoreKitService.shared.isPro = isValid
+                        }
                     }
                     await transaction.finish()
                 }

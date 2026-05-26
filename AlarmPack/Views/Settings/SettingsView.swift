@@ -105,6 +105,7 @@ struct SettingsView: View {
     private func legalSection() -> some View {
         Section {
             Link("Privacy Policy", destination: URL(string: "https://\(githubUser).github.io/\(appName)/privacy.html")!)
+            Link("Terms of Use", destination: URL(string: "https://\(githubUser).github.io/\(appName)/terms.html")!)
             Link("Support Page", destination: URL(string: "https://\(githubUser).github.io/\(appName)/support.html")!)
         } header: {
             Text("Legal")

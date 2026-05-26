@@ -28,7 +28,6 @@ struct ShiftEngine {
         let start = calendar.startOfDay(for: startDate)
         let now = Date()
         let daysSinceStart = calendar.dateComponents([.day], from: start, to: now).day ?? 0
-        let currentWeek = daysSinceStart / 7
         let daysIntoWeek = daysSinceStart % 7
         return daysIntoWeek == 0 && calendar.component(.hour, from: now) == 0
     }

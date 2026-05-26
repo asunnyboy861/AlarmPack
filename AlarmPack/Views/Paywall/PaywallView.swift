@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PaywallView: View {
-    @State private var isLoading = false
+    @State private var storeKit = StoreKitService.shared
     @Environment(\.dismiss) private var dismiss
 
     private let features: [(icon: String, title: String, desc: String)] = [
@@ -57,7 +57,7 @@ struct PaywallView: View {
                         Button {
                             Task { await purchasePro() }
                         } label: {
-                            if isLoading {
+                            if storeKit.isLoading {
                                 ProgressView()
                                     .tint(.white)
                                     .frame(maxWidth: .infinity)
@@ -73,7 +73,7 @@ struct PaywallView: View {
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
-                        .disabled(isLoading)
+                        .disabled(storeKit.isLoading)
 
                         Button {
                             Task { await StoreKitService.shared.restorePurchases() }
@@ -81,6 +81,24 @@ struct PaywallView: View {
                             Text("Restore Purchases")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 16) {
+                            Link("Privacy Policy", destination: URL(string: "https://asunnyboy861.github.io/AlarmPack/privacy.html")!)
+                                .font(.caption2)
+                                .foregroundStyle(Color.orange)
+                            Link("Terms of Use", destination: URL(string: "https://asunnyboy861.github.io/AlarmPack/terms.html")!)
+                                .font(.caption2)
+                                .foregroundStyle(Color.orange)
+                        }
+                        .padding(.top, 8)
+
+                        if let error = storeKit.purchaseError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
                     }
                 }
@@ -95,9 +113,7 @@ struct PaywallView: View {
     }
 
     private func purchasePro() async {
-        isLoading = true
         let success = await StoreKitService.shared.purchasePro()
-        isLoading = false
         if success {
             dismiss()
         }
